@@ -1,13 +1,19 @@
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
+import IconButton from '@material-ui/core/IconButton';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import { useTheme } from '@material-ui/core/styles';
+import SwipeableDrawer from '@material-ui/core/SwipeableDrawer';
 import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import Toolbar from '@material-ui/core/Toolbar';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import useScrollTrigger from '@material-ui/core/useScrollTrigger';
+import MenuIcon from '@material-ui/icons/Menu';
 import { makeStyles } from '@material-ui/styles';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -79,29 +85,67 @@ const useStyles = makeStyles((theme) => ({
       opacity: 1,
     },
   },
+  menuItemSelected: {
+    opacity: 1,
+  },
+  drawerIconContainer: {
+    marginLeft: 'auto',
+    '&:hover': {
+      backgroundColor: 'transparent',
+    },
+  },
+  drawerIcon: {
+    height: '50px',
+    width: '50px',
+  },
+  drawer: {
+    backgroundColor: theme.palette.common.blue,
+  },
+  drawerItem: {
+    ...theme.typography.tab,
+    color: 'white',
+    opacity: 0.7,
+    '&:hover': {
+      opacity: 1,
+    },
+  },
+  drawerItemSelected: {
+    '& .MuiListItemText-root': {
+      opacity: 1,
+    },
+  },
+  drawerItemEstimate: {
+    backgroundColor: theme.palette.common.orange,
+  },
+  appBar: {
+    zIndex: theme.zIndex.modal + 1,
+  },
 }));
 
 const Header = () => {
   const classes = useStyles();
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.down('md'));
+  const iOS = process.browser && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
   const [value, setValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [open, setOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [openDrawer, setOpenDrawer] = useState(false);
 
-  const handleChange = (_, value) => {
-    setValue(value);
+  const handleChange = (e, newValue) => {
+    setValue(newValue);
   };
 
   const handleClick = (e) => {
     setAnchorEl(e.currentTarget);
-    setOpen(true);
+    setOpenMenu(true);
   };
 
   const handleClose = (e) => {
     setAnchorEl(null);
-    setOpen(false);
+    setOpenMenu(false);
   };
 
   const handleMenuItemClick = (e, index) => {
@@ -112,41 +156,59 @@ const Header = () => {
     {
       name: 'Services',
       link: '/services',
+      activeIndex: 1,
+      selectedIndex: 0,
     },
     {
       name: 'Custom Software Development',
       link: '/customsoftware',
+      activeIndex: 1,
+      selectedIndex: 1,
     },
     {
       name: 'Mobile App Development',
       link: '/mobileapps',
+      activeIndex: 1,
+      selectedIndex: 2,
     },
     {
       name: 'Website Development',
       link: '/websites',
+      activeIndex: 1,
+      selectedIndex: 3,
     },
   ];
 
+  const routes = [
+    { name: 'Home', link: '/', activeIndex: 0 },
+    {
+      name: 'Services',
+      link: '/services',
+      activeIndex: 1,
+      ariaOwns: anchorEl ? 'simple-menu' : undefined,
+      ariaHaspopup: anchorEl ? 'true' : undefined,
+      onMouseOver: (e) => handleClick(e),
+    },
+    { name: 'The Revolution', link: '/revolution', activeIndex: 2 },
+    { name: 'About Us', link: '/about', activeIndex: 3 },
+    { name: 'Contact Us', link: '/contact', activeIndex: 4 },
+  ];
+
   useEffect(() => {
-    const location = window.location.pathname;
-    const locationCondition = (path, tabIndex) =>
-      location === path && value !== tabIndex;
-
-    const setValueAndIndex = (selectedIndex) => {
-      setValue(1);
-      setSelectedIndex(selectedIndex);
-    };
-
-    if (locationCondition('/', 0)) setValue(0);
-    else if (locationCondition('/services', 1)) setValue(1);
-    else if (locationCondition('/customsoftware', 1)) setValueAndIndex(1);
-    else if (locationCondition('/mobileapps', 1)) setValueAndIndex(2);
-    else if (locationCondition('/websites', 1)) setValueAndIndex(3);
-    else if (locationCondition('/revolution', 2)) setValue(2);
-    else if (locationCondition('/about', 3)) setValue(3);
-    else if (locationCondition('/contact', 4)) setValue(4);
-    else if (locationCondition('/estimate', 5)) setValue(5);
-  }, [value]);
+    [...menuOptions, ...routes].forEach(
+      ({ activeIndex, selectedIndex: routeSelectedIndex, link }) => {
+        const routeMatch = window.location.pathname === link;
+        if (routeMatch) {
+          if (value !== activeIndex) {
+            setValue(activeIndex);
+            if (routeSelectedIndex && routeSelectedIndex !== selectedIndex) {
+              setSelectedIndex(routeSelectedIndex);
+            }
+          }
+        }
+      }
+    );
+  }, [value, menuOptions, selectedIndex, routes]);
 
   const tabs = (
     <>
@@ -156,34 +218,18 @@ const Header = () => {
         className={classes.tabContainer}
         indicatorColor='primary'
       >
-        <Tab className={classes.tab} component={Link} to='/' label='Home' />
-        <Tab
-          aria-owns={anchorEl ? 'simple-menu' : undefined}
-          aria-haspopup={anchorEl ? 'true' : undefined}
-          className={classes.tab}
-          component={Link}
-          onMouseOver={(e) => handleClick(e)}
-          to='/services'
-          label='Services'
-        />
-        <Tab
-          className={classes.tab}
-          component={Link}
-          to='/revolution'
-          label='The Revolution'
-        />
-        <Tab
-          className={classes.tab}
-          component={Link}
-          to='/about'
-          label='About Us'
-        />
-        <Tab
-          className={classes.tab}
-          component={Link}
-          to='/contact'
-          label='Contanct Us'
-        />
+        {routes.map((route, index) => (
+          <Tab
+            key={index}
+            className={classes.tab}
+            component={Link}
+            to={route.link}
+            label={route.name}
+            aria-owns={route.ariaOwns}
+            aria-haspopup={route.ariaHaspopup}
+            onMouseOver={route.onMouseOver}
+          />
+        ))}
       </Tabs>
       <Button variant='contained' color='secondary' className={classes.button}>
         Free Estimate
@@ -191,11 +237,13 @@ const Header = () => {
       <Menu
         id='simple-menu'
         anchorEl={anchorEl}
-        open={open}
+        open={openMenu}
         onClose={handleClose}
         classes={{ paper: classes.menu }}
         MenuListProps={{ onMouseLeave: handleClose }}
         elevation={0}
+        style={{ zIndex: 1302 }}
+        keepMounted
       >
         {menuOptions.map(({ name, link }, idx) => (
           <MenuItem
@@ -208,7 +256,10 @@ const Header = () => {
             selected={idx === selectedIndex && value === 1}
             component={Link}
             to={link}
-            classes={{ root: classes.menuItem }}
+            classes={{
+              root: classes.menuItem,
+              selected: classes.menuItemSelected,
+            }}
           >
             {name}
           </MenuItem>
@@ -217,10 +268,72 @@ const Header = () => {
     </>
   );
 
+  const drawer = (
+    <>
+      <SwipeableDrawer
+        disableBackdropTransition={!iOS}
+        disableDiscovery={iOS}
+        open={openDrawer}
+        onClose={() => setOpenDrawer(false)}
+        onOpen={() => setOpenDrawer(true)}
+        classes={{ paper: classes.drawer }}
+      >
+        <div className={classes.toolbarMargin} />
+        <List disablePadding>
+          {routes.map(({ link, name, activeIndex }) => (
+            <ListItem
+              key={activeIndex}
+              onClick={() => {
+                setOpenDrawer(false);
+                setValue(activeIndex);
+              }}
+              divider
+              button
+              component={Link}
+              to={link}
+              selected={value === activeIndex}
+              classes={{ selected: classes.drawerItemSelected }}
+            >
+              <ListItemText className={classes.drawerItem} disableTypography>
+                {name}
+              </ListItemText>
+            </ListItem>
+          ))}
+          <ListItem
+            onClick={() => {
+              setOpenDrawer(false);
+              setValue(5);
+            }}
+            divider
+            button
+            component={Link}
+            to='/estimate'
+            selected={value === 5}
+            classes={{
+              root: classes.drawerItemEstimate,
+              selected: classes.drawerItemSelected,
+            }}
+          >
+            <ListItemText className={classes.drawerItem} disableTypography>
+              Free Estimate
+            </ListItemText>
+          </ListItem>
+        </List>
+      </SwipeableDrawer>
+      <IconButton
+        className={classes.drawerIconContainer}
+        onClick={() => setOpenDrawer(!openDrawer)}
+        disableRipple
+      >
+        <MenuIcon className={classes.drawerIcon} />
+      </IconButton>
+    </>
+  );
+
   return (
     <>
       <ElevationScroll>
-        <AppBar>
+        <AppBar className={classes.appBar}>
           <Toolbar disableGutters>
             <Button
               disableRipple
@@ -231,7 +344,7 @@ const Header = () => {
             >
               <img className={classes.logo} src={logo} alt='company logo' />
             </Button>
-            {matches ? null : tabs}
+            {matches ? drawer : tabs}
           </Toolbar>
         </AppBar>
       </ElevationScroll>
