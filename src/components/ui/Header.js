@@ -198,7 +198,8 @@ const Header = ({ value, setValue, selectedIndex, setSelectedIndex }) => {
   useEffect(() => {
     [...menuOptions, ...routes].forEach(
       ({ activeIndex, selectedIndex: routeSelectedIndex, link }) => {
-        const routeMatch = window.location.pathname === link;
+        const currentPath = window.location.pathname;
+        const routeMatch = currentPath === link;
         if (routeMatch) {
           if (value !== activeIndex) {
             setValue(activeIndex);
@@ -206,6 +207,9 @@ const Header = ({ value, setValue, selectedIndex, setSelectedIndex }) => {
               setSelectedIndex(routeSelectedIndex);
             }
           }
+        }
+        if (currentPath === '/estimate') {
+          setValue(5);
         }
       }
     );
@@ -232,7 +236,14 @@ const Header = ({ value, setValue, selectedIndex, setSelectedIndex }) => {
           />
         ))}
       </Tabs>
-      <Button variant='contained' color='secondary' className={classes.button}>
+      <Button
+        component={Link}
+        to='/estimate'
+        variant='contained'
+        color='secondary'
+        className={classes.button}
+        onClick={() => setValue(5)}
+      >
         Free Estimate
       </Button>
       <Menu
